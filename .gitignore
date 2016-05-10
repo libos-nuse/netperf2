@@ -1,0 +1,13 @@
+*.o
+*.deps/
+src/missing/
+src/netperf
+src/netserver
+doc/
+configure
+config.*
+Makefile
+autom4te.cache/
+stamp-h1
+netperf.spec
+src/netperf_version.h
