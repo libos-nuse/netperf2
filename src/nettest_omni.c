@@ -73,6 +73,7 @@ char nettest_omni_id[]="\
 #include <assert.h>
 
 #ifndef WIN32
+#define __USE_GNU
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -4149,7 +4150,17 @@ send_omni_inner(char remote_host[], unsigned int legacy_caller, char header_str[
        the whole expression will go false and we will stop sending
        data. at least that is the plan :)  raj 2008-01-08 */
 
+#define SENDMMSG
+#define BATCH_SIZE 32
+    int batch = BATCH_SIZE;
+    struct mmsghdr mmsg_hdr[BATCH_SIZE];
+    struct iovec msg_iov[BATCH_SIZE];
+
     while ((!times_up) || (units_remaining > 0)) {
+	    int pkt = 0;
+#ifdef SENDMMSG
+#endif
+	    while (pkt < batch) {
 
       /* we need to be careful about when we snap a timestamp
 	 depending on the test parameters. this one *should* cover
@@ -4294,6 +4305,7 @@ send_omni_inner(char remote_host[], unsigned int legacy_caller, char header_str[
 	 try to send something. */
       if (direction & NETPERF_XMIT) {
 
+#ifndef SENDMMSG
 	ret = send_data(data_socket,
 			send_ring,
 			bytes_to_send,
@@ -4343,7 +4355,26 @@ send_omni_inner(char remote_host[], unsigned int legacy_caller, char header_str[
 	  perror("netperf: send_omni: send_data failed");
 	  exit(1);
 	}
+#endif	/* !sendmmsg */
 
+#ifdef SENDMMSG
+	msg_iov[pkt].iov_base = send_ring->buffer_ptr;
+	msg_iov[pkt].iov_len  = bytes_to_send;
+
+	mmsg_hdr[pkt].msg_hdr.msg_name = (connected) ? NULL : remote_res->ai_addr;
+	mmsg_hdr[pkt].msg_hdr.msg_namelen = connected ? 0 : remote_res->ai_addrlen;
+	mmsg_hdr[pkt].msg_hdr.msg_iov = &msg_iov[pkt];
+	mmsg_hdr[pkt].msg_hdr.msg_iovlen = 1;
+	mmsg_hdr[pkt].msg_hdr.msg_control = NULL;
+	mmsg_hdr[pkt].msg_hdr.msg_controllen = 0;
+	mmsg_hdr[pkt].msg_hdr.msg_flags = 0;
+	mmsg_hdr[pkt].msg_len = bytes_to_send;
+	pkt++;
+//	printf("cnt %d\n", pkt);
+//	printf("%d: msgname connected: %d, %d, len:%d\n", pkt, connected,
+//	       !connected ? remote_res->ai_addr : -1,
+//	       remote_res->ai_addrlen);
+#endif
       }
 
 #ifdef WANT_FIRST_BURST
@@ -4541,9 +4572,32 @@ send_omni_inner(char remote_host[], unsigned int legacy_caller, char header_str[
 	  units_remaining--;
 	}
       }
+     }
 
-
+#ifdef SENDMMSG
+    ret = sendmmsg(data_socket, mmsg_hdr, batch, 0);
+    if (ret < 0)
+	    perror("sendmmsg");
+    if (ret == batch) {
+	    /* if this is a send-only test controlled by byte count we
+	       decrement units_remaining by the bytes sent */
+	    if (!(direction & NETPERF_RECV) && (units_remaining > 0)) {
+		    units_remaining -= ret;
+	    }
+	    bytes_sent += (bytes_to_send * ret);
+	    send_ring = send_ring->next;
+	    local_send_calls++;
     }
+    if (ret != batch)
+	    if (SOCKET_EINTR(ret) || (ret >= 0))
+	    {
+//		    times_up = 1;
+//		    timed_out = 1;
+
+	    }
+#endif
+    }
+
 
     /* we are now, ostensibly, at the end of this iteration */
 
@@ -4553,13 +4607,14 @@ send_omni_inner(char remote_host[], unsigned int legacy_caller, char header_str[
     demo_interval_final();
 #endif
 
+#ifndef SENDMMSG
     if (transport_mss == -2)
       get_transport_info(data_socket,
 			 &transport_mss,
 			 local_res->ai_protocol);
     local_transport_retrans = get_transport_retrans(data_socket,
 						    local_res->ai_protocol);
-
+#endif
 
     /* so, if we have/had a data connection, we will want to close it
        now, and this will be independent of whether there is a control
