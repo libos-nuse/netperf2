@@ -74,6 +74,7 @@ char nettest_omni_id[]="\
 
 #ifndef WIN32
 #define __USE_GNU
+#define _GNU_SOURCE 1
 #include <sys/socket.h>
 #include <netinet/in.h>
 
