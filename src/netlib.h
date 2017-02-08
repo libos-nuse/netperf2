@@ -669,7 +669,7 @@ extern int dl_bind(int fd, int sap, int mode, char *dlsap_ptr, int *dlsap_len);
 extern  int     dl_open(char devfile[], int ppa);
 #endif /* WANT_DLPI */
 extern  char    format_cpu_method(int method);
-extern unsigned int convert(char *string);
+extern long int convert(char *string);
 extern unsigned int convert_timespec(char *string);
 
 #ifdef WANT_INTERVALS

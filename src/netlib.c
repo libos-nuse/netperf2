@@ -1451,12 +1451,12 @@ netlib_init()
    as the socket size) which could be rather large. If someone enters
    32M, then the number will be converted to 32 * 1024 * 1024.  If
    they inter 32m, the number will be converted to 32 * 1000 * 1000 */
-unsigned int
+long int
 convert(char *string)
 
 {
-  unsigned int base;
-  base = atoi(string);
+  long int base;
+  base = atol(string);
   if (strstr(string,"K")) {
     base *= 1024;
   }
