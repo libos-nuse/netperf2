@@ -144,7 +144,7 @@ int
 /* the end-test conditions for the tests - either transactions, bytes,
    or time. different vars used for clarity - space is cheap ;-) */
 
-int
+long int
   test_time = 10, /* test ends by time */
   test_len_ticks, /* how many times will the timer go off before the
 		     test is over? */
@@ -1314,7 +1314,7 @@ dump_globals()
   printf("Debug: %d\n",debug);
   printf("Port: %s\n",test_port);
   printf("Test name: %s\n",test_name);
-  printf("Test bytes: %d Test time: %d Test trans: %d\n",
+  printf("Test bytes: %ld Test time: %ld Test trans: %ld\n",
 	 test_bytes,
 	 test_time,
 	 test_trans);
