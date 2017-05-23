@@ -70,7 +70,7 @@ struct  omni_request_struct {
 
   float      cpu_rate;       /* do we know how fast the cpu is already? */
 
-  int64_t    test_length;    /* how long is the test? */
+  int32_t    test_length;    /* how long is the test? */
 
   uint32_t   so_rcvavoid;    /* avoid copies on recv? */
   uint32_t   so_sndavoid;    /* avoid copies on send? */

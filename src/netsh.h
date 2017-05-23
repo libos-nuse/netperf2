@@ -108,7 +108,7 @@ extern int
 
 /* the end-test conditions for the tests - either transactions, bytes,  */
 /* or time. different vars used for clarity - space is cheap ;-)        */
-extern long int
+extern int
   test_time,		/* test ends by time			*/
   test_len_ticks,
   test_bytes,		/* test ends on byte count		*/
