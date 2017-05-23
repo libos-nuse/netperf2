@@ -2937,7 +2937,9 @@ send_data(SOCKET data_socket, struct ring_elt *send_ring, uint32_t bytes_to_send
   if(len != bytes_to_send) {
     /* don't forget that some platforms may do a partial send upon
        receipt of the interrupt and not return an EINTR... */
-    if (SOCKET_EINTR(len) || (len >= 0))
+    /* the client keeps on sending data even after time up on the
+       rump kernel, b/c of UNIX signals incompatiblities */
+    if (SOCKET_EINTR(len) || (len >= 0) || (errno == EPIPE))
       {
 	/* we hit the end of a  timed test. */
 	return -1;
